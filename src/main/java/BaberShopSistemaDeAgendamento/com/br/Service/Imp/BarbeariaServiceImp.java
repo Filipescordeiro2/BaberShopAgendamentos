@@ -1,11 +1,17 @@
 package BaberShopSistemaDeAgendamento.com.br.Service.Imp;
 
 import BaberShopSistemaDeAgendamento.com.br.DTO.BarbeariaDTO;
-import BaberShopSistemaDeAgendamento.com.br.Model.BarbeariaModel;
+import BaberShopSistemaDeAgendamento.com.br.DTO.EnderecoBarbeariaDTO;
+import BaberShopSistemaDeAgendamento.com.br.Model.Barbearia;
+import BaberShopSistemaDeAgendamento.com.br.Model.EnderecoBarbearia;
 import BaberShopSistemaDeAgendamento.com.br.Repository.BarbeariaRepository;
+import BaberShopSistemaDeAgendamento.com.br.Repository.EnderecoBarbeariaRepository;
 import BaberShopSistemaDeAgendamento.com.br.Service.BarbeariaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,72 +26,142 @@ public class BarbeariaServiceImp implements BarbeariaService {
     @Autowired
     private BarbeariaRepository barbeariaRepository;
 
+    @Autowired
+    private EnderecoBarbeariaRepository enderecoBarbeariaRepository;
+
+    /**
+     * Salva uma nova Barbearia e seu endereço associado no banco de dados.
+     *
+     * @param barbeariaDTO DTO contendo os dados da barbearia e seu endereço.
+     * @return BarbeariaDTO atualizado após a persistência no banco de dados.
+     */
     @Override
+    @Transactional
     public BarbeariaDTO save(BarbeariaDTO barbeariaDTO) {
-        BarbeariaModel barbearia = new BarbeariaModel();
+        // Converte o DTO para uma entidade Barbearia
+        Barbearia barbearia = new Barbearia();
         barbearia.setNome(barbeariaDTO.getNome());
-        barbearia.setEndereco(barbeariaDTO.getEndereco());
         barbearia.setTelefone(barbeariaDTO.getTelefone());
 
-        barbearia = barbeariaRepository.save(barbearia);
-        return new BarbeariaDTO(barbearia.getId(), barbearia.getNome(), barbearia.getEndereco(), barbearia.getTelefone());
+        // Converte e salva o endereço, se houver
+        EnderecoBarbeariaDTO enderecoDTO = barbeariaDTO.getEndereco();
+        if (enderecoDTO != null) {
+            EnderecoBarbearia endereco;
+
+            // Verifica se o endereço já existe para evitar entidade desanexada
+            if (enderecoDTO.getId() != null) {
+                endereco = enderecoBarbeariaRepository.findById(enderecoDTO.getId())
+                        .orElseThrow(() -> new RuntimeException("Endereço não encontrado"));
+                endereco.setRua(enderecoDTO.getRua());
+                endereco.setBairro(enderecoDTO.getBairro());
+                endereco.setCidade(enderecoDTO.getCidade());
+                endereco.setEstado(enderecoDTO.getEstado());
+                endereco.setCep(enderecoDTO.getCep());
+            } else {
+                endereco = new EnderecoBarbearia();
+                endereco.setRua(enderecoDTO.getRua());
+                endereco.setBairro(enderecoDTO.getBairro());
+                endereco.setCidade(enderecoDTO.getCidade());
+                endereco.setEstado(enderecoDTO.getEstado());
+                endereco.setCep(enderecoDTO.getCep());
+            }
+
+            // Associa o endereço à barbearia
+            endereco.setBarbearia(barbearia);
+            barbearia.setEndereco(endereco);
+        }
+
+        // Salva a Barbearia
+        Barbearia savedBarbearia = barbeariaRepository.save(barbearia);
+        barbeariaDTO.setId(savedBarbearia.getId());
+
+        return toDTO(savedBarbearia);
     }
 
+    /**
+     * Busca todas as barbearias que correspondem ao filtro fornecido.
+     *
+     * @param filtro DTO contendo os critérios de filtro para a busca.
+     * @return Lista de BarbeariaDTO que correspondem ao filtro.
+     */
     @Override
-    public List<BarbeariaDTO> findAll() {
-        return barbeariaRepository.findAll().stream()
-                .map(barbearia -> new BarbeariaDTO(barbearia.getId(), barbearia.getNome(), barbearia.getEndereco(), barbearia.getTelefone()))
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public List<BarbeariaDTO> findAll(BarbeariaDTO filtro) {
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnoreCase()
+                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING);
+
+        Barbearia barbeariaFiltro = fromDTO(filtro);
+        Example<Barbearia> example = Example.of(barbeariaFiltro, matcher);
+
+        List<Barbearia> barbeariasList = barbeariaRepository.findAll(example);
+        return barbeariasList.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    /**
+     * Busca uma Barbearia específica pelo seu ID.
+     *
+     * @param id ID da barbearia a ser buscada.
+     * @return BarbeariaDTO representando a barbearia encontrada.
+     */
     @Override
+    @Transactional(readOnly = true)
     public BarbeariaDTO findById(Long id) {
-        BarbeariaModel barbearia = barbeariaRepository.findById(id)
+        Barbearia barbearia = barbeariaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Barbearia não encontrada"));
-        return new BarbeariaDTO(barbearia.getId(), barbearia.getNome(), barbearia.getEndereco(), barbearia.getTelefone());
+        return toDTO(barbearia);
     }
 
+    /**
+     * Deleta uma Barbearia específica pelo seu ID.
+     *
+     * @param id ID da barbearia a ser deletada.
+     */
     @Override
+    @Transactional
     public void delete(Long id) {
         barbeariaRepository.deleteById(id);
     }
 
     /**
-     * Busca Barbearias pelo nome.
+     * Converte uma entidade Barbearia para um DTO BarbeariaDTO.
      *
-     * @param nome Nome da Barbearia.
-     * @return Lista de objetos BarbeariaDTO que correspondem ao nome fornecido.
+     * @param barbearia Entidade Barbearia a ser convertida.
+     * @return BarbeariaDTO representando a entidade convertida.
      */
-    @Override
-    public List<BarbeariaDTO> findByNome(String nome) {
-        return barbeariaRepository.findByNomeContaining(nome).stream()
-                .map(barbearia -> new BarbeariaDTO(barbearia.getId(), barbearia.getNome(), barbearia.getEndereco(), barbearia.getTelefone()))
-                .collect(Collectors.toList());
+    private BarbeariaDTO toDTO(Barbearia barbearia) {
+        BarbeariaDTO barbeariaDTO = new BarbeariaDTO();
+        barbeariaDTO.setId(barbearia.getId());
+        barbeariaDTO.setNome(barbearia.getNome());
+        barbeariaDTO.setTelefone(barbearia.getTelefone());
+
+        if (barbearia.getEndereco() != null) {
+            EnderecoBarbearia endereco = barbearia.getEndereco();
+            EnderecoBarbeariaDTO enderecoDTO = new EnderecoBarbeariaDTO();
+            enderecoDTO.setId(endereco.getId());
+            enderecoDTO.setRua(endereco.getRua());
+            enderecoDTO.setBairro(endereco.getBairro());
+            enderecoDTO.setCidade(endereco.getCidade());
+            enderecoDTO.setEstado(endereco.getEstado());
+            enderecoDTO.setCep(endereco.getCep());
+            enderecoDTO.setBarbeariaId(endereco.getBarbearia().getId());
+            barbeariaDTO.setEndereco(enderecoDTO);
+        }
+
+        return barbeariaDTO;
     }
 
     /**
-     * Busca Barbearias pelo endereço.
+     * Converte um DTO BarbeariaDTO para uma entidade Barbearia.
      *
-     * @param endereco Endereço da Barbearia.
-     * @return Lista de objetos BarbeariaDTO que correspondem ao endereço fornecido.
+     * @param barbeariaDTO DTO a ser convertido.
+     * @return Entidade Barbearia representando o DTO convertido.
      */
-    @Override
-    public List<BarbeariaDTO> findByEndereco(String endereco) {
-        return barbeariaRepository.findByEnderecoContaining(endereco).stream()
-                .map(barbearia -> new BarbeariaDTO(barbearia.getId(), barbearia.getNome(), barbearia.getEndereco(), barbearia.getTelefone()))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Busca Barbearias pelo telefone.
-     *
-     * @param telefone Telefone da Barbearia.
-     * @return Lista de objetos BarbeariaDTO que correspondem ao telefone fornecido.
-     */
-    @Override
-    public List<BarbeariaDTO> findByTelefone(String telefone) {
-        return barbeariaRepository.findByTelefoneContaining(telefone).stream()
-                .map(barbearia -> new BarbeariaDTO(barbearia.getId(), barbearia.getNome(), barbearia.getEndereco(), barbearia.getTelefone()))
-                .collect(Collectors.toList());
+    private Barbearia fromDTO(BarbeariaDTO barbeariaDTO) {
+        Barbearia barbearia = new Barbearia();
+        barbearia.setId(barbeariaDTO.getId());
+        barbearia.setNome(barbeariaDTO.getNome());
+        barbearia.setTelefone(barbeariaDTO.getTelefone());
+        return barbearia;
     }
 }

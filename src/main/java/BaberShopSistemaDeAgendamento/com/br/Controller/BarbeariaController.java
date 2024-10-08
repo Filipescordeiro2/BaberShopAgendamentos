@@ -2,87 +2,64 @@ package BaberShopSistemaDeAgendamento.com.br.Controller;
 
 import BaberShopSistemaDeAgendamento.com.br.DTO.BarbeariaDTO;
 import BaberShopSistemaDeAgendamento.com.br.Service.BarbeariaService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * Controlador REST para gerenciar Barbearias.
- * Processa as requisições HTTP e delega a lógica de negócios ao serviço de Barbearia.
+ * Controladora para gerenciar Barbearias.
  */
 @RestController
 @RequestMapping("/api/barbearias")
+@RequiredArgsConstructor
 public class BarbeariaController {
 
-    @Autowired
-    private BarbeariaService barbeariaService;
+    private final BarbeariaService barbeariaService;
 
     /**
      * Cria uma nova Barbearia.
      *
-     * @param barbeariaDTO Objeto DTO que contém os dados da Barbearia a ser criada.
-     * @return Retorna o objeto BarbeariaDTO criado dentro de um ResponseEntity.
+     * @param barbeariaDTO DTO contendo os dados da barbárie.
+     * @return BarbeariaDTO atualizado após a persistência no banco de dados.
      */
     @PostMapping
-    public ResponseEntity<BarbeariaDTO> createBarbearia(@RequestBody BarbeariaDTO barbeariaDTO) {
-        BarbeariaDTO newBarbearia = barbeariaService.save(barbeariaDTO);
-        return ResponseEntity.ok(newBarbearia);
+    public ResponseEntity<BarbeariaDTO> createBarbearia(@Validated @RequestBody BarbeariaDTO barbeariaDTO) {
+        BarbeariaDTO savedBarbearia = barbeariaService.save(barbeariaDTO);
+        return ResponseEntity.ok(savedBarbearia);
     }
 
     /**
-     * Retorna uma lista de todas as Barbearias.
+     * Recupera todas as Barbearias.
      *
-     * @return Lista de objetos BarbeariaDTO.
+     * @param filtro DTO contendo os critérios de filtro para a busca.
+     * @return Lista de BarbeariaDTO que correspondem ao filtro.
      */
     @GetMapping
-    public List<BarbeariaDTO> getAllBarbearias() {
-        return barbeariaService.findAll();
+    public ResponseEntity<List<BarbeariaDTO>> getAllBarbearias(@Validated BarbeariaDTO filtro) {
+        List<BarbeariaDTO> barbearias = barbeariaService.findAll(filtro);
+        return ResponseEntity.ok(barbearias);
     }
 
     /**
-     * Retorna os dados de uma Barbearia específica, baseado no ID fornecido.
+     * Recupera uma Barbearia pelo seu ID.
      *
-     * @param id ID da Barbearia a ser recuperada.
-     * @return Retorna o objeto BarbeariaDTO correspondente ao ID fornecido dentro de um ResponseEntity.
+     * @param id ID da barbárie a ser recuperada.
+     * @return BarbeariaDTO representando a barbárie encontrada.
      */
     @GetMapping("/{id}")
     public ResponseEntity<BarbeariaDTO> getBarbeariaById(@PathVariable Long id) {
-        BarbeariaDTO barbeariaDTO = barbeariaService.findById(id);
-        return ResponseEntity.ok(barbeariaDTO);
+        BarbeariaDTO barbearia = barbeariaService.findById(id);
+        return ResponseEntity.ok(barbearia);
     }
 
     /**
-     * Busca Barbearias com base em diferentes parâmetros.
+     * Deleta uma Barbearia pelo seu ID.
      *
-     * @param nome Nome parcial da Barbearia.
-     * @param endereco Endereço parcial da Barbearia.
-     * @param telefone Telefone parcial da Barbearia.
-     * @return Lista de objetos BarbeariaDTO que correspondem aos parâmetros fornecidos.
-     */
-    @GetMapping("/search")
-    public List<BarbeariaDTO> searchBarbearias(
-            @RequestParam(required = false) String nome,
-            @RequestParam(required = false) String endereco,
-            @RequestParam(required = false) String telefone) {
-
-        if (nome != null) {
-            return barbeariaService.findByNome(nome);
-        } else if (endereco != null) {
-            return barbeariaService.findByEndereco(endereco);
-        } else if (telefone != null) {
-            return barbeariaService.findByTelefone(telefone);
-        } else {
-            return barbeariaService.findAll();
-        }
-    }
-
-    /**
-     * Deleta uma Barbearia específica, baseado no ID fornecido.
-     *
-     * @param id ID da Barbearia a ser deletada.
-     * @return Retorna um ResponseEntity com status `noContent`.
+     * @param id ID da barbárie a ser deletada.
+     * @return Resposta sem conteúdo.
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBarbearia(@PathVariable Long id) {

@@ -1,6 +1,6 @@
 package BaberShopSistemaDeAgendamento.com.br.Repository;
 
-import BaberShopSistemaDeAgendamento.com.br.Model.BarbeariaModel;
+import BaberShopSistemaDeAgendamento.com.br.Model.Barbearia;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Repositório JPA para acessar dados da Barbearia.
  */
-public interface BarbeariaRepository extends JpaRepository<BarbeariaModel, Long> {
+public interface BarbeariaRepository extends JpaRepository<Barbearia, Long> {
 
     /**
      * Busca Barbearias pelo nome.
@@ -16,15 +16,15 @@ public interface BarbeariaRepository extends JpaRepository<BarbeariaModel, Long>
      * @param nome Nome parcial da Barbearia.
      * @return Lista de Barbearias que contêm o nome fornecido.
      */
-    List<BarbeariaModel> findByNomeContaining(String nome);
+    List<Barbearia> findByNomeContaining(String nome);
 
     /**
-     * Busca Barbearias pelo endereço.
+     * Busca Barbearias pela rua do endereço.
      *
-     * @param endereco Endereço parcial da Barbearia.
-     * @return Lista de Barbearias que contêm o endereço fornecido.
+     * @param rua Rua parcial do endereço da Barbearia.
+     * @return Lista de Barbearias que contêm a rua fornecida.
      */
-    List<BarbeariaModel> findByEnderecoContaining(String endereco);
+    List<Barbearia> findByEnderecoRuaContaining(String rua);
 
     /**
      * Busca Barbearias pelo telefone.
@@ -32,5 +32,5 @@ public interface BarbeariaRepository extends JpaRepository<BarbeariaModel, Long>
      * @param telefone Telefone parcial da Barbearia.
      * @return Lista de Barbearias que contêm o telefone fornecido.
      */
-    List<BarbeariaModel> findByTelefoneContaining(String telefone);
+    List<Barbearia> findByTelefoneContaining(String telefone);
 }

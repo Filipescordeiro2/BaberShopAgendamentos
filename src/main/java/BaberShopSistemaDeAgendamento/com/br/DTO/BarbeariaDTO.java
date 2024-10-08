@@ -1,8 +1,12 @@
 package BaberShopSistemaDeAgendamento.com.br.DTO;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 /**
  * Classe DTO (Data Transfer Object) para Barbearia.
@@ -12,24 +16,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BarbeariaDTO {
-
-    /**
-     * Identificador único da Barbearia.
-     */
     private Long id;
-
-    /**
-     * Nome da Barbearia.
-     */
     private String nome;
-
-    /**
-     * Endereço da Barbearia.
-     */
-    private String endereco;
-
-    /**
-     * Telefone de contato da Barbearia.
-     */
     private String telefone;
+    private EnderecoBarbeariaDTO endereco; // Singular
 }

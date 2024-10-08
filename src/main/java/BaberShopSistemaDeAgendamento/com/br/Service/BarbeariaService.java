@@ -10,12 +10,8 @@ import java.util.List;
  */
 public interface BarbeariaService {
     BarbeariaDTO save(BarbeariaDTO barbeariaDTO);
-    List<BarbeariaDTO> findAll();
+    List<BarbeariaDTO> findAll(BarbeariaDTO filtro);
     BarbeariaDTO findById(Long id);
     void delete(Long id);
 
-    // Novos métodos de busca
-    List<BarbeariaDTO> findByNome(String nome);
-    List<BarbeariaDTO> findByEndereco(String endereco);
-    List<BarbeariaDTO> findByTelefone(String telefone);
 }
